@@ -48,7 +48,7 @@ def get_dataset() -> tuple[pd.DataFrame | None, str | None, str | None, str | No
     uploaded_file = st.sidebar.file_uploader(
         "Load CalCOFI bottle data",
         type=["csv"],
-        help="CSV must include the four model columns. Maximum file size: 300 MB.",
+        help="CSV must include the four model columns. Maximum file size: 500 MB.",
     )
 
     if uploaded_file is not None:
