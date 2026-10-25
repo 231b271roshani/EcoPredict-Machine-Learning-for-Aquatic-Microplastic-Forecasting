@@ -6,6 +6,12 @@ secondaryBackgroundColor = "#e6f3ef"
 textColor = "#123a42"
 showWidgetBorder = true
 chartCategoricalColors = ["#13887e", "#38a5a0", "#89cfc1", "#d7a84b"]
+paddingTop = "1.25rem"
+paddingBottom = "1.5rem"
+
+[theme.sidebar]
+paddingTop = "1rem"
+paddingBottom = "1rem"
 
 [server]
 maxUploadSize = 500

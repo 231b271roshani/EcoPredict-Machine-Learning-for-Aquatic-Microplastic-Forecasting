@@ -77,14 +77,12 @@ def get_dataset() -> tuple[pd.DataFrame | None, str | None, str | None, str | No
 
 dataset, dataset_label, dataset_id, load_error = get_dataset()
 
-st.caption("CalCOFI · Regression workspace")
-st.title("Ocean temperature forecasting")
-st.info(
-    f"This model predicts water temperature ({TARGET_COLUMN}) from depth, salinity, "
-    "and dissolved oxygen. It does not currently predict microplastic contamination.",
-    title="Current prediction target",
+st.caption("CALCOFI  /  ENVIRONMENTAL FORECASTING")
+st.title("Ocean temperature")
+st.caption(
+    f"Estimate {TARGET_COLUMN} from depth, salinity, and dissolved oxygen. "
+    "This model does not predict microplastic contamination."
 )
-st.write("")
 
 if dataset is None:
     if load_error:
@@ -111,20 +109,17 @@ if st.session_state.get("dataset_id") != dataset_id:
     st.session_state["dataset_id"] = dataset_id
     st.session_state.pop("training", None)
 
-header_left, header_right = st.columns([3, 1])
-with header_left:
-    st.subheader("Your dataset")
+with st.container(border=True):
+    st.subheader("Dataset overview")
     st.caption(f"Source: {dataset_label}")
-with header_right:
-    st.metric(
-        "Samples per model",
+    metric_columns = st.columns(4, gap="small")
+    metric_columns[0].metric("Rows loaded", f"{len(dataset):,}")
+    metric_columns[1].metric("Valid rows", f"{len(cleaned_dataset):,}")
+    metric_columns[2].metric(
+        "Training sample",
         f"{min(len(cleaned_dataset), MAX_TRAINING_ROWS):,}",
     )
-
-metric_columns = st.columns(3)
-metric_columns[0].metric("Rows loaded", f"{len(dataset):,}")
-metric_columns[1].metric("Complete numeric rows", f"{len(cleaned_dataset):,}")
-metric_columns[2].metric("Model inputs", "3 ocean measurements")
+    metric_columns[3].metric("Input features", "3")
 
 dashboard_view = st.segmented_control(
     "Dashboard view",
@@ -133,10 +128,10 @@ dashboard_view = st.segmented_control(
     label_visibility="collapsed",
 )
 if dashboard_view == "Model comparison":
-    st.markdown("### Compare forecasting models")
-    st.write(
-        f"Train on up to {MAX_TRAINING_ROWS:,} complete rows, using a reproducible "
-        "80/20 train/test split."
+    st.subheader("Model comparison")
+    st.caption(
+        f"Four regressors · reproducible 80/20 split · up to "
+        f"{MAX_TRAINING_ROWS:,} complete rows"
     )
     if st.button("Train and compare models", type="primary", width="stretch"):
         with st.spinner("Training four regressors and evaluating the holdout set..."):
@@ -151,11 +146,6 @@ if dashboard_view == "Model comparison":
                     "models": models,
                 }
 
-    st.dataframe(
-        dataset.loc[:, list(REQUIRED_COLUMNS)].head(8),
-        hide_index=True,
-        alt="Preview of the first eight oceanographic observations.",
-    )
     training = st.session_state.get("training")
     if training:
         results = training["metrics"]
@@ -166,72 +156,91 @@ if dashboard_view == "Model comparison":
             title="Top-performing model",
         )
         chart_data = results.set_index("Model")
-        chart_left, chart_right = st.columns(2)
-        with chart_left:
-            st.markdown("#### R² score · higher is better")
-            st.bar_chart(
-                chart_data,
-                y="R2 Score",
-                horizontal=True,
-                alt="Holdout R-squared scores for the four regression models.",
+        with st.container(border=True):
+            st.markdown("#### Holdout performance")
+            chart_left, chart_right = st.columns(2, gap="small")
+            with chart_left:
+                st.caption("R² score · higher is better")
+                st.bar_chart(
+                    chart_data,
+                    y="R2 Score",
+                    horizontal=True,
+                    alt="Holdout R-squared scores for the four regression models.",
+                )
+            with chart_right:
+                st.caption("RMSE · lower is better")
+                st.bar_chart(
+                    chart_data,
+                    y="RMSE",
+                    horizontal=True,
+                    alt="Holdout root mean squared error for the four regression models.",
+                )
+            st.dataframe(
+                results.rename(
+                    columns={
+                        "R2 Score": "R² score",
+                        "RMSE": "RMSE (°C)",
+                        "MAE": "MAE (°C)",
+                    }
+                ),
+                hide_index=True,
+                alt="Holdout evaluation metrics for the four regression models.",
             )
-        with chart_right:
-            st.markdown("#### RMSE · lower is better")
-            st.bar_chart(
-                chart_data,
-                y="RMSE",
-                horizontal=True,
-                alt="Holdout root mean squared error for the four regression models.",
-            )
-        st.dataframe(
-            results.rename(
-                columns={"R2 Score": "R² score", "RMSE": "RMSE (°C)", "MAE": "MAE (°C)"}
-            ),
-            hide_index=True,
-            alt="Holdout evaluation metrics for the four regression models.",
-        )
     else:
         st.caption("Train the models to see holdout performance and enable predictions.")
 
+    with st.expander("Preview dataset rows"):
+        st.dataframe(
+            dataset.loc[:, list(REQUIRED_COLUMNS)].head(8),
+            hide_index=True,
+            alt="Preview of the first eight oceanographic observations.",
+        )
+
 else:
-    st.markdown("### Estimate water temperature")
-    st.write("Enter ocean measurements within the observed range of this dataset.")
+    st.subheader("Temperature prediction")
+    st.caption("Enter measurements within the observed range of the loaded dataset.")
     training = st.session_state.get("training")
     if not training:
         st.info("Train the models in **Model comparison** before making predictions.")
     else:
-        observed = cleaned_dataset.loc[:, FEATURE_COLUMNS].agg(["min", "max", "mean"])
+        observed = cleaned_dataset.loc[:, list(FEATURE_COLUMNS)].agg(
+            ["min", "max", "mean"]
+        )
         best_model = training["metrics"].loc[
             training["metrics"]["R2 Score"].idxmax(), "Model"
         ]
-        model_name = st.segmented_control(
-            "Regression model",
-            list(training["models"]),
-            default=best_model,
-        )
-        with st.form("prediction_form"):
-            input_columns = st.columns(len(FEATURE_COLUMNS))
-            values = {}
-            for column, container in zip(FEATURE_COLUMNS, input_columns):
-                label, unit = FEATURE_LABELS[column]
-                minimum = float(observed.loc["min", column])
-                maximum = float(observed.loc["max", column])
-                mean = float(observed.loc["mean", column])
-                values[column] = container.number_input(
-                    f"{label} ({unit})",
-                    min_value=minimum,
-                    max_value=maximum,
-                    value=min(max(mean, minimum), maximum),
-                    step=max((maximum - minimum) / 100, 0.01),
-                    format="%.2f",
-                )
-            predict_clicked = st.form_submit_button(
-                "Predict temperature", type="primary", width="stretch"
+        with st.container(border=True):
+            model_name = st.selectbox(
+                "Regression model",
+                list(training["models"]),
+                index=list(training["models"]).index(best_model),
             )
+            with st.form("prediction_form"):
+                input_columns = st.columns(len(FEATURE_COLUMNS), gap="small")
+                values = {}
+                for column, container in zip(FEATURE_COLUMNS, input_columns):
+                    label, unit = FEATURE_LABELS[column]
+                    minimum = float(observed.loc["min", column])
+                    maximum = float(observed.loc["max", column])
+                    mean = float(observed.loc["mean", column])
+                    values[column] = container.number_input(
+                        f"{label} ({unit})",
+                        min_value=minimum,
+                        max_value=maximum,
+                        value=min(max(mean, minimum), maximum),
+                        step=max((maximum - minimum) / 100, 0.01),
+                        format="%.2f",
+                    )
+                predict_clicked = st.form_submit_button(
+                    "Predict temperature", type="primary", width="stretch"
+                )
 
         if predict_clicked:
             observation = pd.DataFrame([values], columns=FEATURE_COLUMNS)
             scaled_observation = training["scaler"].transform(observation)
             prediction = training["models"][model_name].predict(scaled_observation)[0]
-            st.metric("Predicted water temperature", f"{prediction:.2f} °C")
-            st.caption(f"Estimate from {model_name}; this is a model output, not a measurement.")
+            st.success(
+                f"Predicted water temperature: **{prediction:.2f} °C**",
+                title="Model estimate",
+            )
+            st.caption(f"Estimate from {model_name}; this is not a measurement.")
