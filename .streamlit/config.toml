@@ -9,3 +9,4 @@ chartCategoricalColors = ["#13887e", "#38a5a0", "#89cfc1", "#d7a84b"]
 
 [server]
 maxUploadSize = 500
+maxMessageSize = 500
