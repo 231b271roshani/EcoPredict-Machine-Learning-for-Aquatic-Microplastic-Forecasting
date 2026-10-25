@@ -58,7 +58,7 @@ pip install -r requirements.txt
 ~~~
 
 ### 5. Add data and launch the dashboard
-Download the CalCOFI `bottle.csv` data and either upload it in the dashboard or place it at `ML/bottle.csv`. The CSV must include `Depthm`, `Salnty`, `O2ml_L`, and `T_degC`.
+Download the CalCOFI `bottle.csv` data and either upload it in the dashboard (up to 300 MB) or place it at `ML/bottle.csv`. The CSV must include `Depthm`, `Salnty`, `O2ml_L`, and `T_degC`.
 ~~~bash
 streamlit run app.py
 ~~~
