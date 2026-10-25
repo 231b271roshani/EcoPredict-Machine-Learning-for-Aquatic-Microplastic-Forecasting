@@ -2,11 +2,11 @@
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
 ![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-Machine%20Learning-orange.svg)
-![Next.js](https://img.shields.io/badge/Next.js-React-black)
+![Streamlit](https://img.shields.io/badge/Streamlit-Dashboard-FF4B4B?logo=streamlit)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
 ## 📌 Project Overview
-The quantification of aquatic pollution (such as microplastics and chemical runoff) typically relies on labor-intensive and expensive manual sampling. **EcoPredict** is a machine learning pipeline and web platform designed to provide a cost-effective, indirect method to forecast water contamination metrics using readily available oceanographic proxy data.
+**EcoPredict** is a machine-learning project for exploring environmental forecasting with oceanographic measurements. Its current CalCOFI model predicts water temperature from depth, salinity, and dissolved oxygen; it does **not** currently predict microplastic or other contamination levels.
 
 This project was developed to serve as the foundation for a comparative research analysis on the efficacy of various regression algorithms in environmental forecasting.
 
@@ -14,17 +14,16 @@ This project was developed to serve as the foundation for a comparative research
 * **Big Data Processing:** Handles and cleans large-scale oceanographic data (CalCOFI dataset with over 800,000 records).
 * **Comparative Machine Learning:** Evaluates Multiple Linear Regression, Ridge, Random Forest, and Gradient Boosting algorithms.
 * **Automated Metrics:** Automatically computes R², RMSE, and MAE, generating publication-ready charts.
-* **API-Ready:** Exports the top-performing model as a serialized `.pkl` artifact, ready to be consumed by a FastAPI/Next.js full-stack dashboard.
+* **Interactive Dashboard:** A Streamlit app compares regression models and makes temperature estimates from oceanographic measurements.
+* **Model Artifacts:** The command-line training pipeline exports the top-performing model and scaler as `.pkl` files.
 
 ## 🛠️ Technology Stack
 * **Machine Learning:** Python, Scikit-Learn, Pandas, NumPy
-* **Data Visualization:** Matplotlib, Seaborn
+* **Dashboard & Visualization:** Streamlit, Matplotlib, Seaborn
 * **Model Serialization:** Joblib
-* **Frontend Dashboard (Integration Phase):** Next.js, TypeScript, Tailwind CSS
-* **Backend API (Integration Phase):** FastAPI / Flask
 
 ## 📊 Dataset Context
-This model utilizes the **CalCOFI (California Cooperative Oceanic Fisheries Investigations)** dataset. To avoid overfitting commonly seen in small microplastic datasets, this project leverages massive physical oceanographic metrics (Depth, Salinity, Dissolved Oxygen) to predict water temperature variants and proxy contamination zones. 
+This model utilizes the **CalCOFI (California Cooperative Oceanic Fisheries Investigations)** dataset. The current prediction target is water temperature (`T_degC`), using `Depthm`, `Salnty`, and `O2ml_L` as input features. Microplastic forecasting is a future direction, not an implemented model capability.
 
 ## ⚙️ Installation & Usage
 
@@ -33,40 +32,43 @@ This model utilizes the **CalCOFI (California Cooperative Oceanic Fisheries Inve
 git clone https://github.com/log1-codes/EcoPredict-Machine-Learning-for-Aquatic-Microplastic-Forecasting.git
 ~~~
 
-### 2. Change the directory 
+### 2. Change to the repository directory
 ~~~bash
-cd EcoPredict-Machine-Learning-for-Aquatic-Microplastic-Forecasting/ML
+cd EcoPredict-Machine-Learning-for-Aquatic-Microplastic-Forecasting
 ~~~
 
-### 3. Get the dataset
-Download the **bottle.csv** file from the [CalCOFI Kaggle Dataset](https://www.kaggle.com/datasets) and place it inside the `ML` directory.
-
-### 4. Create a Virtual Environment
+### 3. Create and activate a virtual environment
 ~~~bash
-python3 -m venv .venv 
+python -m venv .venv
 ~~~
 
-### 5. Activate the Virtual Environment 
-~~~bash 
+On Windows PowerShell:
+~~~powershell
+.\.venv\Scripts\Activate.ps1
+~~~
+
+On macOS or Linux:
+~~~bash
 source .venv/bin/activate
 ~~~
-*(Note: If you are on Windows, use `.venv\Scripts\activate`)*
 
-### 6. Install Dependencies
-~~~bash 
-pip install pandas numpy scikit-learn matplotlib seaborn joblib
+### 4. Install dependencies
+~~~bash
+pip install -r requirements.txt
 ~~~
 
-### 7. Run the model 
-~~~bash 
-python model.py 
+### 5. Add data and launch the dashboard
+Download the CalCOFI `bottle.csv` data and either upload it in the dashboard or place it at `ML/bottle.csv`. The CSV must include `Depthm`, `Salnty`, `O2ml_L`, and `T_degC`.
+~~~bash
+streamlit run app.py
 ~~~
 
-### 8. Outputs
-Upon successful execution, the script will generate:
-* `model_comparison_metrics.png`: A bar chart comparing the R² and RMSE of all trained models.
-* `scaler.pkl`: The saved StandardScaler for future API inputs.
-* `best_ecopredict_model.pkl`: The highest-performing regression model saved for production inference.
+### 6. Train from the command line (optional)
+~~~bash
+cd ML
+python model.py
+~~~
+The training script saves `model_comparison_metrics.png`, `scaler.pkl`, and `best_ecopredict_model.pkl` in the `ML` directory.
 
 ## 📝 Research Paper Abstract 
 *(Draft context for academic submission)*
